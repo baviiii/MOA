@@ -24,7 +24,6 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { authData } = useAuth();
   const location = useLocation();
 
-  // Only show loading on initial auth check
   useEffect(() => {
     console.log('Protected route auth state:', {
       isLoading: authData.isLoading,
@@ -33,8 +32,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     });
   }, [authData, location]);
 
-  // Show loading only on initial auth check
-  if (authData.isLoading && !authData.user) {
+  if (authData.isLoading) {
     return <FullPageLoading />;
   }
 
@@ -59,8 +57,7 @@ const AdminRoute = ({ children }: { children: JSX.Element }) => {
     });
   }, [authData, location]);
 
-  // Show loading only on initial auth check
-  if (authData.isLoading && (!authData.user || authData.isAdmin === undefined)) {
+  if (authData.isLoading) {
     return <FullPageLoading />;
   }
 
@@ -75,7 +72,6 @@ const AdminRoute = ({ children }: { children: JSX.Element }) => {
 const PublicRoute = ({ children }: { children: JSX.Element }) => {
   const { authData } = useAuth();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
     console.log('Public route auth state:', {
@@ -85,12 +81,13 @@ const PublicRoute = ({ children }: { children: JSX.Element }) => {
     });
   }, [authData, location]);
 
-  // Show loading only on initial auth check
-  if (authData.isLoading && authData.user === null) {
+  if (authData.isLoading) {
     return <FullPageLoading />;
   }
 
-  if (authData.user) {
+  // Only redirect to dashboard if we have a confirmed logged-in user
+  if (authData.user && !authData.isLoading) {
+    const from = location.state?.from?.pathname || '/dashboard';
     return <Navigate to={from} replace />;
   }
 
