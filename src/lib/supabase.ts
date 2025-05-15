@@ -56,7 +56,9 @@ export const getDriverProfile = async (userId: string): Promise<DriverProfile | 
         first_name: '',  // Required field
         last_name: '',   // Required field
         is_verified: false,
-        is_admin: false
+        is_admin: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       const { data: insertData, error: insertError } = await supabase
@@ -70,9 +72,11 @@ export const getDriverProfile = async (userId: string): Promise<DriverProfile | 
         return null;
       }
       
+      console.log('Created new profile:', insertData);
       return insertData as DriverProfile;
     }
     
+    console.log('Found existing profile:', data);
     return data as DriverProfile;
   } catch (error) {
     console.error('Unexpected error fetching driver profile:', error);

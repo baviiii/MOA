@@ -35,26 +35,31 @@ const Dashboard = () => {
     
     const loadProfile = async () => {
       if (!authData.user) {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+          setProfile(null);
+        }
         return;
       }
       
       try {
-        setIsLoading(true);
+        if (mounted) setIsLoading(true);
         const driverProfile = await getDriverProfile(authData.user.id);
         
         if (!mounted) return;
         
         if (!driverProfile) {
           setProfileError("Could not load your profile. Please try logging out and back in.");
-          return;
+          setProfile(null);
+        } else {
+          setProfile(driverProfile);
+          setProfileError(null);
         }
-        
-        setProfile(driverProfile);
       } catch (error) {
         if (!mounted) return;
         console.error('Error loading profile:', error);
         setProfileError("There was an error loading your profile. Please try refreshing the page.");
+        setProfile(null);
       } finally {
         if (mounted) {
           setIsLoading(false);
