@@ -30,17 +30,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: userId,
           email: email || '',
         },
-        isLoading: false, // Don't keep loading when we have user data
       }));
 
       // Check admin status in the background
       const isAdmin = await checkIsAdmin(userId);
       console.log('Admin check result:', isAdmin);
       
-      // Update admin status without affecting loading state
+      // Update admin status and finish loading
       setAuthData(prev => ({
         ...prev,
         isAdmin,
+        isLoading: false,
       }));
     } catch (error) {
       console.error('Error updating auth state:', error);
@@ -106,6 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!mounted) return;
 
+      // Always set loading true when auth state changes
+      setAuthData(prev => ({
+        ...prev,
+        isLoading: true
+      }));
+
       // Handle different auth events
       switch (event) {
         case 'SIGNED_IN':
@@ -144,6 +150,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // For any other event, if we have a session, update the state
           if (session?.user) {
             await updateAuthState(session.user.id, session.user.email);
+          } else {
+            setAuthData(prev => ({
+              ...prev,
+              isLoading: false
+            }));
           }
           break;
       }
@@ -162,7 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Set loading state before login attempt
       setAuthData(prev => ({
         ...prev,
         isLoading: true
