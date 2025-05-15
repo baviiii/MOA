@@ -23,29 +23,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Set initial state with user data
-      setAuthData({
+      // Set loading state
+      setAuthData(prev => ({
+        ...prev,
+        isLoading: true,
+      }));
+
+      // Update user state immediately
+      setAuthData(prev => ({
+        ...prev,
         user: {
           id: userId,
           email: email || '',
         },
-        isAdmin: false, // Will be updated after check
-        isLoading: true,
-      });
+      }));
 
-      // Check admin status
+      // Check admin status in the background
       const isAdmin = await checkIsAdmin(userId);
       console.log('Admin check result:', isAdmin);
       
-      // Update final state
-      setAuthData({
-        user: {
-          id: userId,
-          email: email || '',
-        },
+      // Update admin status and finish loading
+      setAuthData(prev => ({
+        ...prev,
         isAdmin,
         isLoading: false,
-      });
+      }));
     } catch (error) {
       console.error('Error updating auth state:', error);
       // Reset to logged out state on error
@@ -113,7 +115,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!mounted) return;
 
+      // Always set loading true when auth state changes
+      setAuthData(prev => ({
+        ...prev,
+        isLoading: true
+      }));
+
       try {
+        // Handle different auth events
         switch (event) {
           case 'SIGNED_IN':
             if (session?.user) {
@@ -152,11 +161,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (session?.user) {
               await updateAuthState(session.user.id, session.user.email);
             } else {
-              setAuthData({
-                user: null,
-                isAdmin: false,
-                isLoading: false,
-              });
+              setAuthData(prev => ({
+                ...prev,
+                isLoading: false
+              }));
             }
             break;
         }
@@ -203,23 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      if (!data.user) {
-        setAuthData({
-          user: null,
-          isAdmin: false,
-          isLoading: false,
-        });
-        toast({
-          title: "Login failed",
-          description: "No user data received",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // Wait for auth state to be updated by the listener
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      // Don't set authData here - it will be handled by the onAuthStateChange listener
       toast({
         title: "Login successful",
         description: "Welcome back!",
@@ -227,11 +219,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error) {
       const err = error as Error;
-      setAuthData({
-        user: null,
-        isAdmin: false,
-        isLoading: false,
-      });
+      setAuthData(prev => ({
+        ...prev,
+        isLoading: false
+      }));
       toast({
         title: "Login error",
         description: err.message || "An unexpected error occurred",
