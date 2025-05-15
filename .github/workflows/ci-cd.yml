@@ -37,11 +37,9 @@ jobs:
 
       - name: Build
         run: |
-          npm run build || {
-            echo "Build failed. Please fix the errors before proceeding."
-            exit 1
-          }
-
+          npm run build
+          touch dist/.nojekyll  # Prevents Jekyll processing
+          
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/master'
         uses: peaceiris/actions-gh-pages@v3
@@ -49,4 +47,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           commit_message: "Deploy to GitHub Pages"
-          force_orphan: true 
+          force_orphan: true
+          enable_jekyll: false
+          cname: ${{ github.repository }}
