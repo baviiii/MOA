@@ -23,29 +23,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // First update the basic user state with loading
+      // Update user state immediately
       setAuthData(prev => ({
         ...prev,
         user: {
           id: userId,
           email: email || '',
         },
-        isLoading: true,
+        isLoading: false, // Don't keep loading when we have user data
       }));
 
-      // Then check admin status
+      // Check admin status in the background
       const isAdmin = await checkIsAdmin(userId);
       console.log('Admin check result:', isAdmin);
       
-      // Final state update with loading false
+      // Update admin status without affecting loading state
       setAuthData(prev => ({
         ...prev,
-        user: {
-          id: userId,
-          email: email || '',
-        },
         isAdmin,
-        isLoading: false,
       }));
     } catch (error) {
       console.error('Error updating auth state:', error);
