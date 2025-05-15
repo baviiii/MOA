@@ -149,7 +149,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <Router basename={import.meta.env.PROD ? '/wheel-route-pilot' : '/'}>
+      <Router basename={import.meta.env.PROD ? '/MOA' : '/'}>
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
