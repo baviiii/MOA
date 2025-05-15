@@ -36,7 +36,7 @@ export const getDriverProfile = async (userId: string): Promise<DriverProfile | 
       .eq('user_id', userId)
       .single();
     
-    if (error) {
+    if (error && error.code !== 'PGRST116') { // Not found error
       console.error('Error fetching driver profile:', error);
       return null;
     }
@@ -44,35 +44,33 @@ export const getDriverProfile = async (userId: string): Promise<DriverProfile | 
     if (!data) {
       console.log('No profile found, creating new profile');
       const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        console.error('No current user found when creating profile');
+        return null;
+      }
+
       // Create a default profile with required fields
       const newProfile = {
         user_id: userId,
-        email: currentUser?.email || '',
+        email: currentUser.email || '',
         first_name: '',  // Required field
         last_name: '',   // Required field
         is_verified: false,
         is_admin: false
       };
       
-      const success = await createDriverProfile(newProfile);
-      if (success) {
-        // Fetch the newly created profile
-        const { data: newData, error: fetchError } = await supabase
-          .from('driver_profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-          
-        if (fetchError) {
-          console.error('Error fetching newly created profile:', fetchError);
-          return null;
-        }
-        
-        return newData as DriverProfile;
+      const { data: insertData, error: insertError } = await supabase
+        .from('driver_profiles')
+        .insert([newProfile])
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('Error creating default profile:', insertError);
+        return null;
       }
       
-      console.error('Failed to create default profile');
-      return null;
+      return insertData as DriverProfile;
     }
     
     return data as DriverProfile;
