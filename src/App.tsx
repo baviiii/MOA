@@ -32,10 +32,12 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     });
   }, [authData, location]);
 
+  // Always show loading while checking auth
   if (authData.isLoading) {
     return <FullPageLoading />;
   }
 
+  // Only redirect if we're sure there's no user
   if (!authData.user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -57,10 +59,12 @@ const AdminRoute = ({ children }: { children: JSX.Element }) => {
     });
   }, [authData, location]);
 
+  // Always show loading while checking auth
   if (authData.isLoading) {
     return <FullPageLoading />;
   }
 
+  // Only redirect if we're sure the user isn't an admin
   if (!authData.user || !authData.isAdmin) {
     return <Navigate to="/dashboard" state={{ from: location }} replace />;
   }
@@ -81,12 +85,13 @@ const PublicRoute = ({ children }: { children: JSX.Element }) => {
     });
   }, [authData, location]);
 
+  // Always show loading while checking auth
   if (authData.isLoading) {
     return <FullPageLoading />;
   }
 
-  // Only redirect to dashboard if we have a confirmed logged-in user
-  if (authData.user && !authData.isLoading) {
+  // Only redirect if we're sure there's a user
+  if (authData.user) {
     const from = location.state?.from?.pathname || '/dashboard';
     return <Navigate to={from} replace />;
   }
@@ -94,9 +99,26 @@ const PublicRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
+// Index route - special handling for root path
+const IndexRoute = () => {
+  const { authData } = useAuth();
+  const location = useLocation();
+
+  if (authData.isLoading) {
+    return <FullPageLoading />;
+  }
+
+  // If logged in, redirect to dashboard
+  if (authData.user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Index />;
+};
+
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<Index />} />
+    <Route path="/" element={<IndexRoute />} />
     <Route 
       path="/login" 
       element={

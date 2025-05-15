@@ -23,6 +23,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Set loading state
+      setAuthData(prev => ({
+        ...prev,
+        isLoading: true,
+      }));
+
       // Update user state immediately
       setAuthData(prev => ({
         ...prev,
@@ -100,6 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    // Load initial user state
+    loadUser();
+
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
@@ -112,56 +121,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: true
       }));
 
-      // Handle different auth events
-      switch (event) {
-        case 'SIGNED_IN':
-          if (session?.user) {
-            await updateAuthState(session.user.id, session.user.email);
-          }
-          break;
-        
-        case 'SIGNED_OUT':
-          setAuthData({
-            user: null,
-            isAdmin: false,
-            isLoading: false,
-          });
-          break;
-        
-        case 'USER_UPDATED':
-          if (session?.user) {
-            await updateAuthState(session.user.id, session.user.email);
-          }
-          break;
-        
-        case 'INITIAL_SESSION':
-          if (session?.user) {
-            await updateAuthState(session.user.id, session.user.email);
-          } else {
+      try {
+        // Handle different auth events
+        switch (event) {
+          case 'SIGNED_IN':
+            if (session?.user) {
+              await updateAuthState(session.user.id, session.user.email);
+            }
+            break;
+          
+          case 'SIGNED_OUT':
             setAuthData({
               user: null,
               isAdmin: false,
               isLoading: false,
             });
-          }
-          break;
+            break;
           
-        default:
-          // For any other event, if we have a session, update the state
-          if (session?.user) {
-            await updateAuthState(session.user.id, session.user.email);
-          } else {
-            setAuthData(prev => ({
-              ...prev,
-              isLoading: false
-            }));
-          }
-          break;
+          case 'USER_UPDATED':
+            if (session?.user) {
+              await updateAuthState(session.user.id, session.user.email);
+            }
+            break;
+          
+          case 'INITIAL_SESSION':
+            if (session?.user) {
+              await updateAuthState(session.user.id, session.user.email);
+            } else {
+              setAuthData({
+                user: null,
+                isAdmin: false,
+                isLoading: false,
+              });
+            }
+            break;
+            
+          default:
+            // For any other event, if we have a session, update the state
+            if (session?.user) {
+              await updateAuthState(session.user.id, session.user.email);
+            } else {
+              setAuthData(prev => ({
+                ...prev,
+                isLoading: false
+              }));
+            }
+            break;
+        }
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+        setAuthData({
+          user: null,
+          isAdmin: false,
+          isLoading: false,
+        });
       }
     });
-
-    // Load initial user state
-    loadUser();
 
     // Cleanup function
     return () => {
