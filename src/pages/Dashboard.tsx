@@ -32,8 +32,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     let mounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
     
     const loadProfile = async () => {
       if (!authData.user) {
@@ -47,31 +45,16 @@ const Dashboard = () => {
         
         if (!mounted) return;
         
-        if (!driverProfile && retryCount < maxRetries) {
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          retryCount++;
-          await loadProfile();
-          return;
-        }
-        
         if (!driverProfile) {
-          toast({
-            title: "Error loading profile",
-            description: "There was an error loading your profile. Please try refreshing the page.",
-            variant: "destructive",
-          });
+          setProfileError("Could not load your profile. Please try logging out and back in.");
+          return;
         }
         
         setProfile(driverProfile);
       } catch (error) {
         if (!mounted) return;
         console.error('Error loading profile:', error);
-        toast({
-          title: "Error loading profile",
-          description: "There was an error loading your profile. Please try refreshing the page.",
-          variant: "destructive",
-        });
+        setProfileError("There was an error loading your profile. Please try refreshing the page.");
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -86,7 +69,7 @@ const Dashboard = () => {
     return () => {
       mounted = false;
     };
-  }, [authData, toast]);
+  }, [authData]);
 
   if (isLoading) {
     return (
