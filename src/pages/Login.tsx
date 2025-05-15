@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,22 +9,37 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, authData } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Watch for auth state changes
+  useEffect(() => {
+    if (authData.user && !authData.isLoading) {
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+    }
+  }, [authData, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      const success = await login(email, password);
-      if (success) {
-        navigate('/dashboard');
-      }
+      await login(email, password);
+      // Don't navigate here - let the useEffect handle it
     } finally {
       setIsLoading(false);
     }
   };
+
+  // If we're already logged in, redirect
+  useEffect(() => {
+    if (authData.user && !authData.isLoading) {
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -49,6 +64,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="h-10"
+                disabled={isLoading || authData.isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -62,14 +78,15 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="h-10"
+                disabled={isLoading || authData.isLoading}
               />
             </div>
             <Button
               type="submit"
               className="w-full h-10 bg-driver-green hover:bg-driver-green-dark"
-              disabled={isLoading}
+              disabled={isLoading || authData.isLoading}
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading || authData.isLoading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
         </CardContent>
